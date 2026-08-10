@@ -90,7 +90,9 @@ class DataProcessor:
         """
         self.X_all  = self.df_all.iloc[:, :-1].values
         self.y_all  = self.df_all.iloc[:, -1].values
-        self.groups = list(np.repeat(np.arange(1, int(np.shape(self.X_all)[0] / self.meas_sec) + 1), self.meas_sec))
+        num_groups = int(np.shape(self.X_all)[0] / self.meas_sec)
+        # Build group ID for each sample
+        self.groups = list(np.repeat(np.arange(1, num_groups + 1), self.meas_sec))
 
     def load_calibration(self, calibrate="yes"):
         """
@@ -643,6 +645,26 @@ class NeuralNetworkOptimizer:
 
 #%% Main
 def process_fold(train_ix, test_ix, X_features_a, X_features_b, X_features_c, y_all, groups, meas_sec, df_all):
+    """
+    Run one CV fold: scale/extract features, optimize NN hyperparameters, return fold scores.
+
+    Splits the three baseline-corrected feature matrices and labels by train/test indices,
+    then scales data, selects features, builds a predefined inner CV, and runs
+    NeuralNetworkOptimizer (PSO) to find the best hyperparameters for that fold.
+
+    Args:
+        train_ix, test_ix: Train/test sample indices for this outer fold.
+        X_features_a/b/c: Feature matrices from three baseline-correction methods.
+        y_all: Class labels for all samples.
+        groups, meas_sec: Passed for ProcessPoolExecutor compatibility (unused here).
+        df_all: Full dataframe (used when building predefined CV folds).
+
+    Returns:
+        name_hyperparam: Hyperparameter names.
+        choose_hyperparam: Best hyperpara
+        meter values for this fold.
+        mean_scores_train, mean_scores_test: Best fold balanced-accuracy scores.
+    """
     X_train_val_a, X_test_a = X_features_a[train_ix, :],      X_features_a[test_ix, :]
     X_train_val_b, X_test_b = X_features_b[train_ix, :],      X_features_b[test_ix, :]
     X_train_val_c, X_test_c = X_features_c[train_ix, :],      X_features_c[test_ix, :]
