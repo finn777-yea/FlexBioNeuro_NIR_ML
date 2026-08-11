@@ -71,7 +71,7 @@ class NeuralNetworkOptimizer:
         self.X_out_test        = X_out_test
         self.y_test            = y_test
         self.ga_scores_train   = list()
-        self.ga_scores_test    = list()
+        self.ga_scores_val    = list()
         self.max_num_iteration = max_num_iteration
         self.population_size   = population_size
         self.function_timeout  = function_timeout
@@ -174,19 +174,19 @@ class NeuralNetworkOptimizer:
         preds_test   = (estimator.predict(self.X_out_test) > 0.5).astype("int32")
         
         scores_train = balanced_accuracy_score(self.y_train_val,preds_train)
-        scores_test  = balanced_accuracy_score(self.y_test,preds_test)
+        scores_val  = balanced_accuracy_score(self.y_test,preds_test)
         
         print("DNN")
         print(f'Score on training set:   balanced_accuracy={scores_train*100:.1f}%')
-        print(f'Score on validation set: balanced_accuracy={scores_test*100:.1f}%')
+        print(f'Score on validation set: balanced_accuracy={scores_val*100:.1f}%')
         print(' ')
         print(' ')
         
         # save all scores from GA population
         self.ga_scores_train.append(scores_train)
-        self.ga_scores_test.append(scores_test)
+        self.ga_scores_val.append(scores_val)
 
-        return scores_test * -1 # Expects a value to be minimized
+        return scores_val * -1 # Expects a value to be minimized
     
     def run_optimization(self):
         """
@@ -338,10 +338,10 @@ def process_fold(train_ix, test_ix, X_features_a, X_features_b, X_features_c, y_
     
         
     # save the best results from all GA population
-    mean_scores_train = nn_optimizer.ga_scores_train[nn_optimizer.ga_scores_test.index(max(nn_optimizer.ga_scores_test))]
-    mean_scores_test  = max(nn_optimizer.ga_scores_test)
+    mean_scores_train = nn_optimizer.ga_scores_train[nn_optimizer.ga_scores_val.index(max(nn_optimizer.ga_scores_val))]
+    mean_scores_val  = max(nn_optimizer.ga_scores_val)
     
-    return name_hyperparam, choose_hyperparam, mean_scores_train, mean_scores_test
+    return name_hyperparam, choose_hyperparam, mean_scores_train, mean_scores_val
 
 
 if __name__ == "__main__":
@@ -396,7 +396,7 @@ if __name__ == "__main__":
     # Initialize lists to store hyperparameters and mean scores for training and validation sets
     choose_hyperparam = []
     mean_scores_train = list()
-    mean_scores_test  = list()
+    mean_scores_val  = list()
     
     # Create a ProcessPoolExecutor
     with concurrent.futures.ProcessPoolExecutor(max_workers=5) as executor:
@@ -420,7 +420,7 @@ if __name__ == "__main__":
                 choose_hyperparam = np.column_stack((choose_hyperparam, result2))
             
             mean_scores_train.append(result3)
-            mean_scores_test.append(result4)
+            mean_scores_val.append(result4)
         del result1, result2, result3, result4
     
     # Print results
@@ -429,7 +429,7 @@ if __name__ == "__main__":
     print("Calibration for :  " + cal_case)
     print("Chosen Algorithm:  Deep Neural Network")
     print('mean_scores_train, Balanced_Accuracy: %.2f (%.2f)' % (np.mean(mean_scores_train)*100, np.std(mean_scores_train)*100))
-    print('mean_scores_test,  Balanced_Accuracy: %.2f (%.2f)' % (np.mean(mean_scores_test)*100, np.std(mean_scores_test)*100))
+    print('mean_scores_val,  Balanced_Accuracy: %.2f (%.2f)' % (np.mean(mean_scores_val)*100, np.std(mean_scores_val)*100))
     
     print("")
     for i in range(len(name_hyperparam)):
