@@ -24,6 +24,10 @@ _Avoid_: Data loader, preprocessing pipeline
 The component that scales spectra and reduces them into model-ready feature sets.
 _Avoid_: Feature pipeline, Scaling_and_FeatureExtractor (in docs)
 
+**Hyperparameter searcher**:
+The component that searches over neural-network configuration settings for one cross-validation fold, using a backend such as genetic algorithm or particle swarm optimization.
+_Avoid_: Hyperparam tuning, optimizer class, NeuralNetworkOptimizer (in docs)
+
 **Spectral plotter**:
 The component that visualizes class-separated NIR spectra for evaluation outputs.
 _Avoid_: Plot helper, chart utility

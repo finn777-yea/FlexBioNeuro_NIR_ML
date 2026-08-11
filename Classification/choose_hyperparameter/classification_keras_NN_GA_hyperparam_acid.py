@@ -13,6 +13,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from common.helpers import most_common, warn
 from common.data import DataProcessor
 from common.features import Scaling_and_FeatureExtractor
+from common.nn_hyperparameter_search import GaHyperparamSearcher
+from common.nn_model import BaselineNnBuilder
 
 import concurrent.futures
 import random
@@ -20,11 +22,6 @@ import warnings
 
 import numpy as np
 import tensorflow as tf
-from evolutionary_algorithm import EvolutionaryAlgorithm as ea
-from keras import initializers
-from keras.layers import Dense
-from keras.models import Sequential
-from sklearn.metrics import balanced_accuracy_score
 from sklearn.model_selection import StratifiedGroupKFold
 from tensorflow.keras.utils import set_random_seed
 
@@ -35,240 +32,6 @@ np.random.seed(42)
 random.seed(42)
 tf.random.set_seed(42)
 set_random_seed(42)
-
-class NeuralNetworkOptimizer:
-    def __init__(self, X_out, y_train_val, X_out_test, y_test, 
-                 max_num_iteration=10, population_size=200, function_timeout=300, epochs=200):
-        """
-        Initialize the NeuralNetworkOptimizer class with parameters.
-
-        Parameters:
-            X_out (numpy.ndarray):       Features of the training and validation data.
-            y_train_val (numpy.ndarray): Target values for the training and validation data.
-            X_out_test (numpy.ndarray):  Features of the test data.
-            y_test (numpy.ndarray):      Target values for the test data.
-            max_num_iteration (int):     Maximum number of iterations for the optimization algorithm.
-            population_size (int):       Size of the population in the optimization algorithm.
-            function_timeout (int):      Maximum time allowed for evaluating the objective function.
-            epochs (int):                Number of training epochs for neural network models.
-
-        Returns:
-            None: Initializes the class attributes.
-        """
-        # List of initializers
-        self.keras_init       = [initializers.RandomNormal(seed=42),
-                                 initializers.RandomUniform(seed=42),
-                                 initializers.TruncatedNormal(seed=42),
-                                 initializers.VarianceScaling(seed=42),
-                                 initializers.GlorotNormal(seed=42),
-                                 initializers.GlorotUniform(seed=42),
-                                 initializers.HeNormal(seed=42),
-                                 initializers.HeUniform(seed=42),
-                                 initializers.LecunNormal(seed=42),
-                                 initializers.LecunUniform(seed=42)]
-        self.X_out             = X_out
-        self.y_train_val       = y_train_val
-        self.X_out_test        = X_out_test
-        self.y_test            = y_test
-        self.ga_scores_train   = list()
-        self.ga_scores_val    = list()
-        self.max_num_iteration = max_num_iteration
-        self.population_size   = population_size
-        self.function_timeout  = function_timeout
-        self.epochs            = epochs
-        self.evo_algo          = None
-        
-        
-    def create_baseline(self,
-                        neuron_layer_1 = 15, 
-                        neuron_layer_2 = 8,
-                        activation_1   = "elu", 
-                        activation_2   = "elu", 
-                        activation_3   = "sigmoid",
-                        kernel_init    = 7,
-                        bias_init      = 5,
-                        kernel_reg     = None,
-                        bias_reg       = None,
-                        activity_reg   = None,
-                        kernel_const   = None,
-                        bias_const     = None,
-                        optim          = "Adam"):
-        """
-        Create a neural network model with specified parameters.
-
-        Parameters:
-            neuron_layer_1 (int): Number of neurons in the first hidden layer.
-            neuron_layer_2 (int): Number of neurons in the second hidden layer.
-            activation_1 (str):   Activation function for the first hidden layer.
-            activation_2 (str):   Activation function for the second hidden layer.
-            activation_3 (str):   Activation function for the output layer.
-            kernel_init (int):    Index of the kernel initializer in the keras_init list.
-            bias_init (int):      Index of the bias initializer in the keras_init list.
-            kernel_reg (str):     Regularization for kernel weights.
-            bias_reg (str):       Regularization for bias weights.
-            activity_reg (str):   Regularization for activity.
-            kernel_const (str):   Constraint for kernel weights.
-            bias_const (str):     Constraint for bias weights.
-            optim (str):          Optimizer for model training.
-
-        Returns:
-            keras.models.Sequential: Compiled Keras model.
-        """
-        # generate model
-        model = Sequential()
-        model.add(Dense(units                = neuron_layer_1, 
-                        input_dim            = np.shape(self.X_out)[1], 
-                        activation           = activation_1, 
-                        kernel_initializer   = self.keras_init[kernel_init], 
-                        bias_initializer     = self.keras_init[bias_init],
-                        kernel_regularizer   = kernel_reg,
-                        bias_regularizer     = bias_reg,
-                        activity_regularizer = activity_reg,
-                        kernel_constraint    = kernel_const,
-                        bias_constraint      = bias_const))
-        
-        model.add(Dense(units                = neuron_layer_2, 
-                        activation           = activation_2, 
-                        kernel_initializer   = self.keras_init[kernel_init], 
-                        bias_initializer     = self.keras_init[bias_init],
-                        kernel_regularizer   = kernel_reg,
-                        bias_regularizer     = bias_reg,
-                        activity_regularizer = activity_reg,
-                        kernel_constraint    = kernel_const,
-                        bias_constraint      = bias_const))
-    
-        model.add(Dense(units                = 1,
-                        activation           = activation_3, 
-                        kernel_initializer   = self.keras_init[kernel_init], 
-                        bias_initializer     = self.keras_init[bias_init],
-                        kernel_regularizer   = kernel_reg,
-                        bias_regularizer     = bias_reg,
-                        activity_regularizer = activity_reg,
-                        kernel_constraint    = kernel_const,
-                        bias_constraint      = bias_const))
-        
-        # compile model
-        model.compile(loss='binary_crossentropy', optimizer=optim, metrics=['binary_accuracy'])
-        return model
-    
-    def objective_function(self, args):
-        """
-        Calculate the objective function for the given neural network parameters.
-
-        Parameters:
-            args (dict): Dictionary of neural network configuration parameters.
-
-        Returns:
-            float: The mean squared error of the model's predictions on the validation data.
-        """
-        estimator = self.create_baseline(**args)
-        estimator.fit(x               = self.X_out, 
-                      y               = self.y_train_val, 
-                      epochs          = self.epochs, 
-                      batch_size      = 32,
-                      verbose         = 0,
-                      validation_data = (self.X_out_test, self.y_test))
-        
-        
-        preds_train  = (estimator.predict(self.X_out) > 0.5).astype("int32")
-        preds_test   = (estimator.predict(self.X_out_test) > 0.5).astype("int32")
-        
-        scores_train = balanced_accuracy_score(self.y_train_val,preds_train)
-        scores_val  = balanced_accuracy_score(self.y_test,preds_test)
-        
-        print("DNN")
-        print(f'Score on training set:   balanced_accuracy={scores_train*100:.1f}%')
-        print(f'Score on validation set: balanced_accuracy={scores_val*100:.1f}%')
-        print(' ')
-        print(' ')
-        
-        # save all scores from GA population
-        self.ga_scores_train.append(scores_train)
-        self.ga_scores_val.append(scores_val)
-
-        return scores_val * -1 # Expects a value to be minimized
-    
-    def run_optimization(self):
-        """
-        Run an optimization algorithm to find the best neural network configuration.
-        """
-        # Objective parameters
-        objective_parameters = [
-            {'name'   : 'neuron_layer_1',
-             'bounds' : [10, 15],
-             'type'   : 'int'},
-            
-            {'name'   : 'neuron_layer_2',
-             'bounds' : [5, 9],
-             'type'   : 'int'},
-            
-            {'name'   : 'activation_1',   
-             'bounds' : ["relu", "softmax", "sigmoid", "softplus", "softsign", 
-                         "tanh", "selu", "elu", "exponential"],
-             'type'   : 'cat'},
-            
-            {'name'   : 'activation_2',
-             'bounds' : ["relu", "softmax", "sigmoid", "softplus", "softsign", 
-                         "tanh", "selu", "elu", "exponential"], 
-             'type'   : 'cat'},
-            
-            {'name'   : 'activation_3',
-             'bounds' : ["sigmoid"],
-             'type'   : 'cat'},
-            
-            {'name'   : 'kernel_init',
-             'bounds' : [0, 9],
-             'type'   : 'int'},
-            
-            {'name'   : 'bias_init',
-             'bounds' : [0, 9],
-             'type'   : 'int'},
-            
-            {'name'   : 'kernel_reg',
-             'bounds' : ["L1", "L2", "L1L2"],
-             'type'   : 'cat'},
-            
-            {'name'   : 'bias_reg',
-             'bounds' : ["L1", "L2", "L1L2"],
-             'type'   : 'cat'},
-            
-            {'name'   : 'activity_reg',
-             'bounds' : ["L1", "L2", "L1L2"],
-             'type'   : 'cat'},
-            
-            {'name'   : 'kernel_const',
-             'bounds' : ["MaxNorm", "MinMaxNorm", "NonNeg", "UnitNorm"],
-             'type'   : 'cat'},
-            
-            {'name'   : 'bias_const',
-             'bounds' : ["MaxNorm", "MinMaxNorm", "NonNeg", "UnitNorm"],
-             'type'   : 'cat'},
-            
-            {'name'   : 'optim',
-             'bounds' : ["Adadelta", "Adagrad", "Adam", "Adamax", "Ftrl",
-                         "Nadam", "RMSprop", "SGD"],
-             'type'   : 'cat'},
-        ]
-        
-        # Create instance of EA object
-        algorithm_parameters = {'max_num_iteration'           : self.max_num_iteration,
-                                'population_size'             : self.population_size,
-                                'mutation_probability'        : 0.1,
-                                'elite_ratio'                 : 0.05,
-                                'crossover_probability'       : 0.5,
-                                'parents_portion'             : 0.3,
-                                'crossover_type'              : 'uniform',
-                                'max_iteration_without_improv': None}
-        
-        self.evo_algo = ea(function             = self.objective_function, 
-                           parameters           = objective_parameters,
-                           function_timeout     = self.function_timeout,
-                           algorithm_parameters = algorithm_parameters)
-        
-        # Run EA
-        self.evo_algo.run()
-
-
 
 
 #%% Main
@@ -310,18 +73,19 @@ def process_fold(train_ix, test_ix, X_features_a, X_features_b, X_features_c, y_
         
     """
     ######################################################################################################
-    # Machine Learning, Class: NeuralNetworkOptimizer
+    # Machine Learning, Class: GaHyperparamSearcher
     ######################################################################################################
     """
-    nn_optimizer = NeuralNetworkOptimizer(X_out             = features_extractor.X_out, 
-                                          y_train_val       = features_extractor.y_train_val, 
-                                          X_out_test        = features_extractor.X_out_test, 
-                                          y_test            = features_extractor.y_test, 
-                                          max_num_iteration = 10-8,  # Genetic Algorithm
-                                          population_size   = 1000-995, # Genetic Algorithm
-                                          function_timeout  = 300, # Genetic Algorithm
-                                          epochs            = 300) # Neural Network
-    nn_optimizer.run_optimization()
+    searcher = GaHyperparamSearcher(
+        X_train=features_extractor.X_out,
+        y_train=features_extractor.y_train_val,
+        X_val=features_extractor.X_out_test,
+        y_val=features_extractor.y_test,
+        function_timeout=300,
+        epochs=300,
+        model_builder=BaselineNnBuilder(),
+    )
+    searcher.run(max_num_iteration=10 - 8, population_size=1000 - 995)
         
         
         
@@ -332,15 +96,9 @@ def process_fold(train_ix, test_ix, X_features_a, X_features_b, X_features_c, y_
     # Save results
     ######################################################################################################
     """
-    # Store the results, hyperparameters, and mean scores for this fold
-    name_hyperparam   = list(nn_optimizer.evo_algo.best_parameters.keys())
-    choose_hyperparam = list(nn_optimizer.evo_algo.best_parameters.values())
-    
-        
-    # save the best results from all GA population
-    mean_scores_train = nn_optimizer.ga_scores_train[nn_optimizer.ga_scores_val.index(max(nn_optimizer.ga_scores_val))]
-    mean_scores_val  = max(nn_optimizer.ga_scores_val)
-    
+    name_hyperparam, choose_hyperparam = searcher.best_parameter_names(), searcher.best_parameter_values()
+    mean_scores_train, mean_scores_val = searcher.best_fold_scores()
+
     return name_hyperparam, choose_hyperparam, mean_scores_train, mean_scores_val
 
 
