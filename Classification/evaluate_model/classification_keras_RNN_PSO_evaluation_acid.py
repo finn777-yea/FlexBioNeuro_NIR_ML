@@ -10,67 +10,38 @@ from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from common.helpers import most_common, warn
+from common.helpers import warn
 from common.data import DataProcessor
 from common.features import Scaling_and_FeatureExtractor
-from common.plotting import SpectralPlotter
 
-# Data manipulation and analysis
-import pandas as pd  # For data handling and analysis
-import numpy as np  # For numerical operations
-import copy  # For creating deep copies of data
-
-# Data visualization
-import matplotlib.pyplot as plt  # For creating plots and visualizations
-import matplotlib.patches as mpatches  # For creating patches in plots
-import matplotlib as mpl  # For customizing Matplotlib behavior
-
-# Data preprocessing and machine learning
-from sklearn.preprocessing import MinMaxScaler  # For feature scaling
-from sklearn.model_selection import PredefinedSplit  # For cross-validation and hyperparameter tuning
-from sklearn.decomposition import PCA, TruncatedSVD  # For dimensionality reduction
-from sklearn.ensemble import ExtraTreesClassifier  # For Extra Trees classification
-from sklearn.feature_selection import SelectKBest, f_classif  # For feature selection with chi-squared test
-from sklearn.model_selection import cross_validate  # For cross-validation with group information
-from sklearn.cross_decomposition import PLSRegression  # For Partial Least Squares regression
-from scipy import signal  # For signal processing and detrending
-
-# Machine learning classifiers
-from keras.models import Sequential                 # forward neural network
-from keras.layers import Dense                      # fully convoluteed
-from keras import initializers
-from keras.layers import LSTM                       # recurrent neural network
-
-
-# Machine learning metrics evaluation
-from sklearn.metrics import balanced_accuracy_score, precision_score, recall_score, f1_score
-
-
-# Machine learning evaluation
-from sklearn.metrics import confusion_matrix            # confusion matrix
-import seaborn as sns
-from sklearn.model_selection import learning_curve      # learning curve
-from sklearn.metrics import roc_auc_score
-from sklearn.metrics import roc_curve
-
-
-
-# Choose hyperparameter from most common elements
-
+import random
 import warnings
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import tensorflow as tf
+from keras import initializers
+from keras.layers import Dense, LSTM
+from keras.models import Sequential
+from sklearn.metrics import (
+    balanced_accuracy_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+    roc_curve,
+)
+from tensorflow.keras.utils import set_random_seed
+
 warnings.warn = warn
 warnings.filterwarnings("ignore")
 
-# to create the same random sequence every time
 np.random.seed(42)
-
-import random
 random.seed(42)
-
-import tensorflow as tf
 tf.random.set_seed(42)
-
-from tensorflow.keras.utils import set_random_seed
 set_random_seed(42)
 
 class NeuralNetworkOptimizer:

@@ -14,49 +14,29 @@ from common.helpers import most_common, warn
 from common.data import DataProcessor
 from common.features import Scaling_and_FeatureExtractor
 
-# Data manipulation and analysis
-import pandas as pd  # For data handling and analysis
-import numpy as np  # For numerical operations
-import copy  # For creating deep copies of data
-
-# Data visualization
-import matplotlib.pyplot as plt  # For creating plots and visualizations
-import matplotlib.patches as mpatches  # For creating patches in plots
-import matplotlib as mpl  # For customizing Matplotlib behavior
-
-# Data preprocessing and machine learning
-from sklearn.preprocessing import MinMaxScaler  # For feature scaling
-from sklearn.model_selection import PredefinedSplit, GridSearchCV  # For cross-validation and hyperparameter tuning
-from sklearn.neighbors import KNeighborsClassifier  # For k-Nearest Neighbors classification
-from sklearn.naive_bayes import GaussianNB, BernoulliNB  # For Gaussian and Bernoulli Naive Bayes classification
-from sklearn.decomposition import PCA, TruncatedSVD  # For dimensionality reduction
-from sklearn.ensemble import ExtraTreesClassifier  # For Extra Trees classification
-from sklearn.feature_selection import SelectKBest, f_classif  # For feature selection with chi-squared test
-from sklearn.model_selection import StratifiedGroupKFold, cross_validate  # For cross-validation with group information
-from sklearn.cross_decomposition import PLSRegression  # For Partial Least Squares regression
-from scipy import signal  # For signal processing and detrending
-
-# Machine learning classifiers
-from sklearn.tree import DecisionTreeClassifier  # For Decision Tree classification
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis  # For Linear Discriminant Analysis
-from sklearn.linear_model import LogisticRegression  # For Logistic Regression
-from sklearn.svm import SVC  # For Support Vector Classification
-from sklearn.ensemble import RandomForestClassifier  # For Random Forest classification
-from sklearn.ensemble import GradientBoostingClassifier  # For Gradient Boosting classification
-from sklearn.ensemble import AdaBoostClassifier  # For AdaBoost classification
-from sklearn.neural_network import MLPClassifier  # For Multi-layer Perceptron classification
-
-
-# Choose hyperparameter from most common elements
-
+import random
 import warnings
+
+import numpy as np
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.ensemble import (
+    AdaBoostClassifier,
+    ExtraTreesClassifier,
+    GradientBoostingClassifier,
+    RandomForestClassifier,
+)
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV, StratifiedGroupKFold, cross_validate
+from sklearn.naive_bayes import BernoulliNB, GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+
 warnings.warn = warn
 warnings.filterwarnings("ignore")
 
-# to create the same random sequence every time
 np.random.seed(42)
-
-import random
 random.seed(42)
 
 class MLAlgorithm:
