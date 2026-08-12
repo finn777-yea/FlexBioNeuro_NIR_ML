@@ -34,7 +34,19 @@ if torch.cuda.is_available():
 
 
 #%% Main
-def process_fold(train_ix, test_ix, X_features_a, X_features_b, X_features_c, y_all, groups, meas_sec, df_all):
+def process_fold(
+        train_ix,
+        test_ix,
+        X_features_a,
+        X_features_b,
+        X_features_c,
+        y_all,
+        groups,
+        meas_sec,
+        df_all,
+        epochs=30,
+        batch_size=32,
+):
     # Split data for the current fold
     X_train_val_a, X_test_a = X_features_a[train_ix, :],      X_features_a[test_ix, :]
     X_train_val_b, X_test_b = X_features_b[train_ix, :],      X_features_b[test_ix, :]
@@ -87,7 +99,8 @@ def process_fold(train_ix, test_ix, X_features_a, X_features_b, X_features_c, y_
         X_val=X_val,
         y_val=y_val,
         function_timeout=300,
-        epochs=300,
+        epochs=epochs,
+        batch_size=batch_size,
         model_builder=BaselineNnBuilder(),
     )
     searcher.run(max_num_iteration=10 - 8, population_size=1000 - 995)
@@ -162,6 +175,9 @@ if __name__ == "__main__":
     mean_scores_val  = list()
     name_hyperparam = None
 
+    epochs = 30
+    batch_size = 128
+
     # Sequential fold loop: one GPU-backed training run at a time.
     for train_ix, test_ix in gkf.split(data_processor.X_cal, data_processor.y_all, data_processor.groups):
         result1, result2, result3, result4 = process_fold(
@@ -174,6 +190,8 @@ if __name__ == "__main__":
             data_processor.groups,
             data_processor.meas_sec,
             data_processor.df_all,
+            epochs=epochs,
+            batch_size=batch_size,
         )
         if not len(choose_hyperparam):
             name_hyperparam = result1
