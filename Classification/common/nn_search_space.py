@@ -1,5 +1,7 @@
 """Default hyperparameter search spaces for neural network optimization."""
 
+import numpy as np
+
 DEFAULT_GA_OBJECTIVE_PARAMETERS = [
     {"name": "neuron_layer_1", "bounds": [10, 15], "type": "int"},
     {"name": "neuron_layer_2", "bounds": [5, 9], "type": "int"},
@@ -33,22 +35,10 @@ DEFAULT_GA_OBJECTIVE_PARAMETERS = [
         ],
         "type": "cat",
     },
-    {"name": "activation_3", "bounds": ["sigmoid"], "type": "cat"},
     {"name": "kernel_init", "bounds": [0, 9], "type": "int"},
     {"name": "bias_init", "bounds": [0, 9], "type": "int"},
     {"name": "kernel_reg", "bounds": ["L1", "L2", "L1L2"], "type": "cat"},
     {"name": "bias_reg", "bounds": ["L1", "L2", "L1L2"], "type": "cat"},
-    {"name": "activity_reg", "bounds": ["L1", "L2", "L1L2"], "type": "cat"},
-    {
-        "name": "kernel_const",
-        "bounds": ["MaxNorm", "MinMaxNorm", "NonNeg", "UnitNorm"],
-        "type": "cat",
-    },
-    {
-        "name": "bias_const",
-        "bounds": ["MaxNorm", "MinMaxNorm", "NonNeg", "UnitNorm"],
-        "type": "cat",
-    },
     {
         "name": "optim",
         "bounds": [
@@ -56,7 +46,6 @@ DEFAULT_GA_OBJECTIVE_PARAMETERS = [
             "Adagrad",
             "Adam",
             "Adamax",
-            "Ftrl",
             "Nadam",
             "RMSprop",
             "SGD",
@@ -73,3 +62,19 @@ DEFAULT_GA_ALGORITHM_PARAMETERS = {
     "crossover_type": "uniform",
     "max_iteration_without_improv": None,
 }
+
+# PSO bounds aligned with DEFAULT_GA_OBJECTIVE_PARAMETERS (9 dimensions).
+DEFAULT_PSO_NAME_HYPERPARAM = [
+    "neuron_layer_1",
+    "neuron_layer_2",
+    "activation_1",
+    "activation_2",
+    "kernel_init",
+    "bias_init",
+    "kernel_reg",
+    "bias_reg",
+    "optim",
+]
+
+DEFAULT_PSO_BOUNDS_MAX = np.array([15, 9, 8, 8, 9, 9, 2, 2, 6])
+DEFAULT_PSO_BOUNDS_MIN = np.array([10, 5, 0, 0, 0, 0, 0, 0, 0])

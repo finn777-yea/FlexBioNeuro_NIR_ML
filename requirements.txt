@@ -9,3 +9,4 @@ keras==2.12.0
 pyswarms==1.3.0
 matplotlib==3.4.3
 seaborn==0.11.1
+torch==2.4.1
