@@ -1,5 +1,7 @@
 """PyTorch baseline dense neural network builder."""
 
+import math
+
 import torch
 import torch.nn as nn
 
@@ -26,22 +28,68 @@ def _make_activation(name):
     return activations[name]
 
 
+def _fans(tensor):
+    """Fan-in / fan-out; 1D tensors follow Keras (fan_in = fan_out = numel)."""
+    if tensor.dim() < 2:
+        n = max(tensor.numel(), 1)
+        return n, n
+    fan_in = tensor.size(1)
+    fan_out = tensor.size(0)
+    receptive_field_size = 1
+    if tensor.dim() > 2:
+        for size in tensor.shape[2:]:
+            receptive_field_size *= size
+    return fan_in * receptive_field_size, fan_out * receptive_field_size
+
+
+def _xavier_uniform(tensor, gain=1.0):
+    fan_in, fan_out = _fans(tensor)
+    bound = gain * math.sqrt(6.0 / (fan_in + fan_out))
+    return nn.init.uniform_(tensor, -bound, bound)
+
+
+def _xavier_normal(tensor, gain=1.0):
+    fan_in, fan_out = _fans(tensor)
+    std = gain * math.sqrt(2.0 / (fan_in + fan_out))
+    return nn.init.normal_(tensor, 0.0, std)
+
+
+def _kaiming_normal(tensor, nonlinearity="relu"):
+    fan_in, _ = _fans(tensor)
+    std = nn.init.calculate_gain(nonlinearity) / math.sqrt(fan_in)
+    return nn.init.normal_(tensor, 0.0, std)
+
+
+def _kaiming_uniform(tensor, nonlinearity="relu"):
+    fan_in, _ = _fans(tensor)
+    bound = nn.init.calculate_gain(nonlinearity) * math.sqrt(3.0 / fan_in)
+    return nn.init.uniform_(tensor, -bound, bound)
+
+
+def _lecun_normal(tensor):
+    fan_in, _ = _fans(tensor)
+    return nn.init.normal_(tensor, 0.0, 1.0 / math.sqrt(fan_in))
+
+
+def _lecun_uniform(tensor):
+    fan_in, _ = _fans(tensor)
+    bound = math.sqrt(3.0 / fan_in)
+    return nn.init.uniform_(tensor, -bound, bound)
+
+
 # Index order mirrors the former Keras initializer list in BaselineNnBuilder.
+# Xavier/Kaiming/Lecun variants must work on 1D biases (Keras did; torch.nn.init does not).
 INIT_FN_BY_INDEX = {
     0: lambda t: nn.init.normal_(t, mean=0.0, std=0.05),
     1: lambda t: nn.init.uniform_(t, a=-0.05, b=0.05),
     2: lambda t: nn.init.trunc_normal_(t, mean=0.0, std=0.05, a=-0.1, b=0.1),
-    3: lambda t: nn.init.xavier_uniform_(t, gain=1.0),
-    4: lambda t: nn.init.xavier_normal_(t, gain=1.0),
-    5: lambda t: nn.init.xavier_uniform_(t, gain=1.0),
-    6: lambda t: nn.init.kaiming_normal_(t, nonlinearity="relu"),
-    7: lambda t: nn.init.kaiming_uniform_(t, nonlinearity="relu"),
-    8: lambda t: nn.init.normal_(t, mean=0.0, std=(1.0 / t.shape[1]) ** 0.5 if t.dim() > 1 else 0.05),
-    9: lambda t: nn.init.uniform_(
-        t,
-        a=-((1.0 / t.shape[1]) ** 0.5 if t.dim() > 1 else 0.05),
-        b=(1.0 / t.shape[1]) ** 0.5 if t.dim() > 1 else 0.05,
-    ),
+    3: lambda t: _xavier_uniform(t, gain=1.0),
+    4: lambda t: _xavier_normal(t, gain=1.0),
+    5: lambda t: _xavier_uniform(t, gain=1.0),
+    6: lambda t: _kaiming_normal(t, nonlinearity="relu"),
+    7: lambda t: _kaiming_uniform(t, nonlinearity="relu"),
+    8: _lecun_normal,
+    9: _lecun_uniform,
 }
 
 
