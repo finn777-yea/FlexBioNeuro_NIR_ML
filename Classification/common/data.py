@@ -140,6 +140,16 @@ class DataProcessor:
         return X_S1_4, X_S1_7, X_S2_0, X_S2_2
 
     def _baseline_correction_on_array(self, X, method, loop_sample_count):
+        """Apply one baseline-correction method to a single spectra matrix.
+
+        Args:
+            X: Spectra to correct, shape (n_spectra, n_wavelengths).
+            method: 1 = detrend, 2 = mean-center, 3 = SNV, 4 = MSC.
+            loop_sample_count: Row count of *this* matrix ``X``, used by methods 3
+                and 4 to walk groups of ``meas_sec`` spectra. Must be
+                ``X.shape[0]``, not the training-dataset length when ``X`` is
+                the held-out test dataset. Methods 1 and 2 ignore this argument.
+        """
         X_S1_4, X_S1_7, X_S2_0, X_S2_2 = self.split_blocks(copy.deepcopy(X))
 
         if method == 1:
@@ -195,5 +205,5 @@ class DataProcessor:
         if self.X_test is None:
             return X_train, None
 
-        X_test = self._baseline_correction_on_array(self.X_test, method, self.X_cal.shape[0])
+        X_test = self._baseline_correction_on_array(self.X_test, method, self.X_test.shape[0])
         return X_train, X_test
