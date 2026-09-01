@@ -83,6 +83,18 @@ def parse_args():
         description="Choose hyperparameters for Torch NN GA (VFA_TA)."
     )
     parser.add_argument(
+        "--epochs",
+        type=int,
+        default=30,
+        help="Number of epochs to train the model.",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=128,
+        help="Batch size to train the model.",
+    )
+    parser.add_argument(
         "--smoke",
         action="store_true",
         help="Pipeline smoke test: 2 epochs, first 2 folds of the 5-fold split.",
@@ -196,7 +208,8 @@ if __name__ == "__main__":
         calibrate      = "yes"
 
     log_path, log_file = start_tee_log(cal_case)
-    epochs = SMOKE_EPOCHS if args.smoke else DEFAULT_EPOCHS
+    epochs = SMOKE_EPOCHS if args.smoke else args.epochs
+    batch_size = args.batch_size
     max_folds = SMOKE_FOLDS if args.smoke else N_SPLITS
     if torch.cuda.is_available():
         device_line = "cuda (%s)" % torch.cuda.get_device_name(0)
@@ -210,6 +223,7 @@ if __name__ == "__main__":
     print("Device:             " + device_line)
     print("Smoke:              " + ("yes" if args.smoke else "no"))
     print("Epochs:             " + str(epochs))
+    print("Batch size:         " + str(batch_size))
     print("Folds to run:       %d of %d" % (max_folds, N_SPLITS))
     print(
         "GA:                 max_num_iteration=%d, population_size=%d"
@@ -250,8 +264,6 @@ if __name__ == "__main__":
         mean_scores_train = list()
         mean_scores_val  = list()
         name_hyperparam = None
-
-        batch_size = 128
 
         # Sequential fold loop: one GPU-backed training run at a time.
         for fold_idx, (train_ix, test_ix) in enumerate(

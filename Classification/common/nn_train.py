@@ -78,6 +78,7 @@ def train_model(
     return_history=False,
 ):
     """Train a model with BCEWithLogitsLoss; sigmoid is deferred to prediction/metrics."""
+    print(f"Training model on {device}")
     device = resolve_device(device)
     model = model.to(device)
     optimizer = create_optimizer(model, optim)
