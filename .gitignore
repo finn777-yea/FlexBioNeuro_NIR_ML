@@ -1,3 +1,13 @@
 __pycache__/
 
 *.log
+
+# Serialized models and sklearn artifacts
+*.joblib
+*.pkl
+*.pickle
+
+# nirs4all run outputs (fitted models, arrays, sqlite store)
+workspace/
+*.sqlite
+*.parquet
