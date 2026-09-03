@@ -11,3 +11,7 @@ __pycache__/
 workspace/
 *.sqlite
 *.parquet
+
+# The dataset lives only at <repo>/Data. Nested per-stage copies are duplicates:
+# resolve inputs through paths.data_path() instead of adding one back.
+/*/*/Data/

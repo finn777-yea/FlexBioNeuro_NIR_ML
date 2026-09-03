@@ -8,7 +8,10 @@ Created on Wed Oct 11 08:45:51 2023
 
 from pathlib import Path
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # Classification/, for `common`
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # repo root, for `paths`
+
+from paths import calibration_path, data_path
 
 from common.helpers import most_common, warn
 from common.data import DataProcessor
@@ -348,10 +351,10 @@ if __name__ == "__main__":
     """
     cal_case = "VFA_TA"
     if cal_case == "VFA_TA":
-        data_file_path = "Data/classification_NIR_Data_raw_VFA_TA.csv"
+        data_file_path = data_path("classification_NIR_Data_raw_VFA_TA.csv")
         calibrate      = "no"#"yes"
     elif cal_case == "Ac_acid":
-        data_file_path = "Data/classification_NIR_Data_raw_Ac_acid.csv"
+        data_file_path = data_path("classification_NIR_Data_raw_Ac_acid.csv")
         calibrate      = "yes"
     
     
@@ -365,7 +368,7 @@ if __name__ == "__main__":
     """
     # Initialize Data Processor
     data_processor = DataProcessor(data_file_path        = data_file_path,
-                                   calibration_file_path = "Data/calibration_NIR_Data.csv",
+                                   calibration_file_path = calibration_path(),
                                    meas_sec              = 8)
 
     # Load raw data, set up features and targets, load calibration data, and perform baseline correction

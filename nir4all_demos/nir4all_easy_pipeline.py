@@ -2,14 +2,19 @@ import nirs4all
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import ShuffleSplit, train_test_split
-import os
+import sys
+from pathlib import Path
 import pandas as pd
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # repo root, for `paths`
+
+from paths import data_path
 
 from nirs4all.visualization.predictions import PredictionAnalyzer
 import matplotlib.pyplot as plt
 
-DATA_PATH = os.path.join("Data", "classification_NIR_Data_raw_Ac_acid.csv")
+DATA_PATH = data_path("classification_NIR_Data_raw_Ac_acid.csv")
 
 data = pd.read_csv(DATA_PATH)
 

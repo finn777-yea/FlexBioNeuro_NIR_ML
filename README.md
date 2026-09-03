@@ -12,7 +12,9 @@ The goal of the FlexBioNeuro project is to leverage the insights from literature
 
 ## Repository Structure
 
-- **Data:** Contains the measured data, split into training, validation, and test sets.
+- **Data:** Contains the measured data, split into training, validation, and test sets. This is the single copy for the whole repository; scripts must not keep their own.
+
+- **paths.py:** Resolves every dataset file through `data_path("<filename>.csv")` / `calibration_path()`, anchored to the repository root rather than the current working directory. This means a script produces the same result whether it is launched from the repository root, from its own directory, or by Slurm. Set the `NIR_DATA_DIR` environment variable to read the dataset from elsewhere (for example a cluster scratch filesystem) without editing any script.
   
 - **Classification and Regression:** Focuses on the estimation of acetic acid concentration and VFA/TA ratio as a classification problem, and dry matter content as a regression problem.
 

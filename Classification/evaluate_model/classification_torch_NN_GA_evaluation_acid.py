@@ -11,7 +11,10 @@ import argparse
 import sys
 from datetime import datetime
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # Classification/, for `common`
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # repo root, for `paths`
+
+from paths import calibration_path, data_path
 
 from common.helpers import warn
 from common.data import DataProcessor
@@ -344,7 +347,6 @@ if __name__ == "__main__":
     args = parse_args()
     cal_case = args.cal_case
     case_files = CAL_CASE_FILES[cal_case]
-    data_dir = Path(__file__).resolve().parent / "Data"
 
     log_path, log_file = start_tee_log(cal_case)
     if torch.cuda.is_available():
@@ -364,9 +366,9 @@ if __name__ == "__main__":
 
     try:
         data_processor = DataProcessor(
-            data_file_path=str(data_dir / case_files["data_file"]),
-            test_data_file_path=str(data_dir / case_files["test_data_file"]),
-            calibration_file_path=str(data_dir / "calibration_NIR_Data.csv"),
+            data_file_path=data_path(case_files["data_file"]),
+            test_data_file_path=data_path(case_files["test_data_file"]),
+            calibration_file_path=calibration_path(),
             meas_sec=8,
         )
 

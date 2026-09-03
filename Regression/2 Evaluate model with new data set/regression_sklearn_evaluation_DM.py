@@ -5,6 +5,14 @@ Created on Wed Oct 11 15:42:03 2023
 @author: ge23hum
 """
 
+# Repository paths
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # repo root, for `paths`
+
+from paths import calibration_path, data_path
+
 # Data manipulation and analysis
 import pandas as pd  # For data handling and analysis
 import numpy as np  # For numerical operations
@@ -1115,9 +1123,9 @@ if __name__ == "__main__":
     ######################################################################################################
     """
     # Initialize Data Processor
-    data_processor = DataProcessor(data_file_path        = "Data/regression_NIR_Data_raw_DM.csv",
-                                   test_data_file_path   = "Data/Test_regression_NIR_Data_raw_DM.csv",
-                                   calibration_file_path = "Data/calibration_NIR_Data.csv",
+    data_processor = DataProcessor(data_file_path        = data_path("regression_NIR_Data_raw_DM.csv"),
+                                   test_data_file_path   = data_path("Test_regression_NIR_Data_raw_DM.csv"),
+                                   calibration_file_path = calibration_path(),
                                    meas_sec              = 8)
 
     # Load raw data, set up features and targets, load calibration data, and perform baseline correction
